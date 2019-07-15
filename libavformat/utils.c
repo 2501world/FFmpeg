@@ -4666,11 +4666,12 @@ uint64_t ff_get_formatted_ntp_time(uint64_t ntp_time_us)
     return ntp_ts;
 }
 
-int av_get_frame_filename2(char *buf, int buf_size, const char *path, int number, int flags)
+int av_get_frame_filename2(char *buf, int buf_size, const char *path, int number, int flags, int64_t ts)
 {
     const char *p;
     char *q, buf1[20], c;
     int nd, len, percentd_found;
+    int hours, mins, secs, ms;
 
     q = buf;
     p = path;
@@ -4703,6 +4704,42 @@ int av_get_frame_filename2(char *buf, int buf_size, const char *path, int number
                 memcpy(q, buf1, len);
                 q += len;
                 break;
+
+            case 't':
+                if (!(flags & AV_FRAME_FILENAME_FLAGS_MULTIPLE) && percentd_found)
+                    goto fail;
+                percentd_found = 1;
+                ms = (ts / 1000) % 1000;
+                ts /= AV_TIME_BASE;
+                secs = ts % 60;
+                ts /= 60;
+                mins = ts % 60;
+                ts /= 60;
+                hours = ts;
+                snprintf(buf1, sizeof(buf1),
+                         "%02d.%02d.%02d.%03d", hours, mins, secs, ms);
+                len = strlen(buf1);
+                if ((q - buf + len) > buf_size - 1)
+                    goto fail;
+                memcpy(q, buf1, len);
+                q += len;
+                break;
+
+            case 'T':
+                if (!(flags & AV_FRAME_FILENAME_FLAGS_MULTIPLE) && percentd_found)
+                    goto fail;
+                percentd_found = 1;
+                ms = (ts / 1000) % 1000;
+                ts /= AV_TIME_BASE;
+                snprintf(buf1, sizeof(buf1),
+                         "%0*d.%03d", nd, ts, ms);
+                len = strlen(buf1);
+                if ((q - buf + len) > buf_size - 1)
+                    goto fail;
+                memcpy(q, buf1, len);
+                q += len;
+                break;
+
             default:
                 goto fail;
             }
@@ -4723,7 +4760,7 @@ fail:
 
 int av_get_frame_filename(char *buf, int buf_size, const char *path, int number)
 {
-    return av_get_frame_filename2(buf, buf_size, path, number, 0);
+    return av_get_frame_filename2(buf, buf_size, path, number, 0, 0);
 }
 
 void av_url_split(char *proto, int proto_size,

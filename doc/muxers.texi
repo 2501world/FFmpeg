@@ -1067,6 +1067,10 @@ If the pattern contains "%d" or "%0@var{N}d", the first filename of
 the file list specified will contain the number 1, all the following
 numbers will be sequential.
 
+The pattern can also contain "%t" which writes out the timestamp of the
+frame in the format "HH.mm.ss.fff". "%T" or "%0@var{N}T" writes out the
+timestamp of the frame in the format "ss.fff".
+
 The pattern may contain a suffix which is used to automatically
 determine the format of the image files to write.
 
